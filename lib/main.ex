@@ -1,4 +1,4 @@
-defmodule Server.CLI do
+defmodule Redis.CLI do
   @moduledoc """
   The CLI for the implementation of a Redis server.
   """

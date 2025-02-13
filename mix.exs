@@ -15,7 +15,7 @@ defmodule App.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {Server.Runtime.Application, []}
+      mod: {Redis.Runtime.Server, []}
     ]
   end
 end

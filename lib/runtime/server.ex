@@ -1,10 +1,11 @@
-defmodule Server.Runtime.Application do
+defmodule Redis.Runtime.Server do
   @moduledoc """
   The Server application.
   """
 
   use Application
   require Logger
+  alias Redis.Impl.Command
 
   def start(_type, _args) do
     Supervisor.start_link([{Task, fn -> listen() end}], strategy: :one_for_one)
@@ -38,7 +39,7 @@ defmodule Server.Runtime.Application do
   def serve(client) do
     case read_request(client) do
       {:ok, request} ->
-        write_response(request, client)
+        request |> Command.parse() |> Command.exec() |> write_response(client)
         serve(client)
 
       error ->
@@ -50,7 +51,7 @@ defmodule Server.Runtime.Application do
     :gen_tcp.recv(client, 0)
   end
 
-  def write_response(_request, client) do
-    :ok = :gen_tcp.send(client, "+PONG\r\n")
+  def write_response(response, client) do
+    :ok = :gen_tcp.send(client, response)
   end
 end
