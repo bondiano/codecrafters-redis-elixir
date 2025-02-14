@@ -1,15 +1,8 @@
-defmodule Redis.Runtime.Server do
-  @moduledoc """
-  The Server application.
-  """
+defmodule Redis.Impl.Server do
+  @moduledoc false
 
-  use Application
   require Logger
   alias Redis.Impl.Command
-
-  def start(_type, _args) do
-    Supervisor.start_link([{Task, fn -> listen() end}], strategy: :one_for_one)
-  end
 
   @doc """
   Listen for incoming connections

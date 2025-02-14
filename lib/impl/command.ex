@@ -5,6 +5,8 @@ defmodule Redis.Impl.Command do
 
   defstruct command: "", arguments: []
 
+  alias Redis.Runtime.Storage
+
   @type t :: %__MODULE__{
           command: String.t(),
           arguments: list()
@@ -34,6 +36,21 @@ defmodule Redis.Impl.Command do
     echo = Enum.join(arguments, " ")
     len = String.length(echo)
     "$#{len}\r\n#{echo}\r\n"
+  end
+
+  def exec(%__MODULE__{command: "SET", arguments: arguments}) do
+    [key, value] = arguments
+    Storage.set(key, value)
+    "+OK\r\n"
+  end
+
+  def exec(%__MODULE__{command: "GET", arguments: arguments}) do
+    [key] = arguments
+
+    case Storage.get(key) do
+      {:ok, value} -> "$#{String.length(value)}\r\n#{value}\r\n"
+      :error -> "$-1\r\n"
+    end
   end
 
   def exec(_request) do
