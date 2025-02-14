@@ -6,6 +6,8 @@ defmodule Redis.Impl.Command do
   defstruct command: "", arguments: []
 
   alias Redis.Runtime.Storage
+  alias Redis.Runtime.Config
+  alias Redis.Impl.Protocol
 
   @type t :: %__MODULE__{
           command: String.t(),
@@ -17,12 +19,7 @@ defmodule Redis.Impl.Command do
   """
   @spec parse(String.t()) :: t()
   def parse(request) do
-    [command | arguments] =
-      request
-      |> String.trim("\r\n")
-      |> String.split("\r\n")
-      |> Enum.slice(2..-1//1)
-      |> Enum.take_every(2)
+    {:ok, [command | arguments]} = Protocol.decode(request)
 
     %__MODULE__{command: command |> String.upcase(), arguments: arguments}
   end
@@ -57,9 +54,23 @@ defmodule Redis.Impl.Command do
     [key] = arguments
 
     case Storage.get(key) do
-      {:ok, nil} -> "$-1\r\n"
-      {:ok, value} -> "$#{String.length(value)}\r\n#{value}\r\n"
-      {:error, _} -> "$-1\r\n"
+      {:ok, value} -> Protocol.encode(value)
+      {:error, _} -> Protocol.null()
+    end
+  end
+
+  def exec(%__MODULE__{command: "CONFIG", arguments: arguments}) do
+    case arguments do
+      ["GET" | keys] ->
+        key_values =
+          Enum.flat_map(keys, fn key ->
+            [key, Config.get(key)]
+          end)
+
+        Protocol.encode(key_values)
+
+      _ ->
+        "-ERR unknown command\r\n"
     end
   end
 
