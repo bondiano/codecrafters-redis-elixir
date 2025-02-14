@@ -39,8 +39,17 @@ defmodule Redis.Impl.Command do
   end
 
   def exec(%__MODULE__{command: "SET", arguments: arguments}) do
-    [key, value] = arguments
-    Storage.set(key, value)
+    parsed_arguments =
+      Enum.chunk_by(arguments, fn arg -> String.downcase(arg) == "px" end)
+
+    case parsed_arguments do
+      [[key | values], _, [expiration]] ->
+        Storage.set(key, values |> Enum.join(" "), expiration |> String.to_integer())
+
+      [[key | values]] ->
+        Storage.set(key, values |> Enum.join(" "))
+    end
+
     "+OK\r\n"
   end
 
@@ -48,8 +57,9 @@ defmodule Redis.Impl.Command do
     [key] = arguments
 
     case Storage.get(key) do
+      {:ok, nil} -> "$-1\r\n"
       {:ok, value} -> "$#{String.length(value)}\r\n#{value}\r\n"
-      :error -> "$-1\r\n"
+      {:error, _} -> "$-1\r\n"
     end
   end
 
