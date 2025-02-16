@@ -3,11 +3,12 @@ defmodule Redis.Runtime.Application do
 
   use Application
 
+  @spec start(term(), term()) :: {:ok, pid()}
   def start(_type, _args) do
     children = [
       Supervisor.child_spec({Task, fn -> Redis.Impl.Server.listen() end}, restart: :permanent),
-      {Redis.Runtime.Storage, name: Redis.Runtime.Storage},
-      {Redis.Runtime.Config, name: Redis.Runtime.Config}
+      {Redis.Runtime.Config, name: Redis.Runtime.Config},
+      {Redis.Runtime.Storage, name: Redis.Runtime.Storage}
     ]
 
     Supervisor.start_link(children,

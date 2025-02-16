@@ -74,6 +74,12 @@ defmodule Redis.Impl.Command do
     end
   end
 
+  def exec(%__MODULE__{command: "KEYS", arguments: arguments}) do
+    [pattern] = arguments
+    {:ok, keys} = Storage.keys(pattern)
+    Protocol.encode_list(keys)
+  end
+
   def exec(_request) do
     "-ERR unknown command\r\n"
   end

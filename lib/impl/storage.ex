@@ -1,4 +1,9 @@
 defmodule Redis.Impl.Storage do
+  @moduledoc """
+    Provides Redis compatible key/value storage that supports key expiration. Currently
+    provides a Subset of Redis commands.
+  """
+
   @type t :: map()
   @type value :: {any, expires_at :: integer}
 
@@ -23,8 +28,17 @@ defmodule Redis.Impl.Storage do
   end
 
   @spec set(t(), String.t(), String.t(), integer) :: t()
-  def set(map, key, value, expiry) do
-    expires_at = System.system_time(:millisecond) + expiry
+  def set(map, key, value, expiry_ms) do
+    expires_at = System.os_time(:millisecond) + expiry_ms
     Map.put(map, key, {value, expires_at})
+  end
+
+  def keys(map, "*") do
+    Map.keys(map)
+  end
+
+  @spec keys(t(), String.t()) :: [String.t()]
+  def keys(map, pattern) do
+    map |> Map.keys() |> Enum.filter(&String.match?(&1, pattern))
   end
 end

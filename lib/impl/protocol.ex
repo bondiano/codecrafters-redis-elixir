@@ -15,19 +15,19 @@ defmodule Redis.Impl.Protocol do
 
   def null(), do: "$-1\r\n"
 
-  defp encode_list(array) do
+  def encode_list(array) do
     "*#{Enum.count(array)}\r\n" <> Enum.join(Enum.map(array, &encode_bulk_string/1), "")
   end
 
-  defp encode_bulk_string(nil), do: null()
+  def encode_bulk_string(nil), do: null()
 
-  defp encode_bulk_string(string) do
+  def encode_bulk_string(string) do
     "$#{byte_size(string)}\r\n#{string}\r\n"
   end
 
-  defp encode_simple_string(nil), do: null()
+  def encode_simple_string(nil), do: null()
 
-  defp encode_simple_string(string) do
+  def encode_simple_string(string) do
     if String.match?(string, ~r/\n|\r/) do
       {:error, "String contains invalid characters"}
     else
