@@ -3,12 +3,14 @@ defmodule Redis.Impl.Server do
 
   require Logger
   alias Redis.Impl.Command
+  alias Redis.Runtime.Config
 
   @doc """
   Listen for incoming connections
   """
   def listen() do
-    {:ok, socket} = :gen_tcp.listen(6379, [:binary, active: false, reuseaddr: true])
+    config = Config.get(:port)
+    {:ok, socket} = :gen_tcp.listen(config, [:binary, active: false, reuseaddr: true])
     loop_accept(socket)
   end
 

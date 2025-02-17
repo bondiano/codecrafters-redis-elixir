@@ -5,11 +5,13 @@ defmodule Redis.Runtime.Config do
   Configuration module for Redis runtime.
   """
 
-  defstruct [:dir, :dbfilename]
+  defstruct [:dir, :dbfilename, :port]
 
-  @type t :: %__MODULE__{dir: String.t(), dbfilename: String.t()}
+  @type t :: %__MODULE__{dir: String.t(), dbfilename: String.t(), port: integer()}
 
-  @options_spec [dir: :string, dbfilename: :string]
+  @options_spec [dir: :string, dbfilename: :string, port: :integer]
+
+  @default_port 6379
 
   def start_link(_opts \\ []) do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
@@ -18,9 +20,13 @@ defmodule Redis.Runtime.Config do
   @impl true
   def init(_) do
     {options, [], []} = OptionParser.parse(System.argv(), strict: @options_spec)
-    options = Enum.into(options, %{})
 
-    {:ok, %__MODULE__{dir: options[:dir], dbfilename: options[:dbfilename]}}
+    {:ok,
+     %__MODULE__{
+       dir: Keyword.get(options, :dir),
+       dbfilename: Keyword.get(options, :dbfilename),
+       port: Keyword.get(options, :port, @default_port)
+     }}
   end
 
   def get(key) do
@@ -36,6 +42,8 @@ defmodule Redis.Runtime.Config do
         :dir -> state.dir
         "dbfilename" -> state.dbfilename
         :dbfilename -> state.dbfilename
+        "port" -> state.port
+        :port -> state.port
       end
 
     {:reply, value, state}
