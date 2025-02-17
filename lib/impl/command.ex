@@ -80,6 +80,20 @@ defmodule Redis.Impl.Command do
     Protocol.encode_list(keys)
   end
 
+  def exec(%__MODULE__{command: "INFO", arguments: arguments}) do
+    case arguments do
+      [] ->
+        info = Config.get(:port)
+        Protocol.encode_list(info)
+
+      ["replication"] ->
+        Protocol.encode("role:master")
+
+      _ ->
+        "-ERR unknown command\r\n"
+    end
+  end
+
   def exec(_request) do
     "-ERR unknown command\r\n"
   end
