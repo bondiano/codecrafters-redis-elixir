@@ -5,11 +5,16 @@ defmodule Redis.Runtime.Config do
   Configuration module for Redis runtime.
   """
 
-  defstruct [:dir, :dbfilename, :port]
+  defstruct [:dir, :dbfilename, :port, :replicaof]
 
-  @type t :: %__MODULE__{dir: String.t(), dbfilename: String.t(), port: integer()}
+  @type t :: %__MODULE__{
+          dir: String.t(),
+          dbfilename: String.t(),
+          port: integer(),
+          replicaof: String.t()
+        }
 
-  @options_spec [dir: :string, dbfilename: :string, port: :integer]
+  @options_spec [dir: :string, dbfilename: :string, port: :integer, replicaof: :string]
 
   @default_port 6379
 
@@ -25,7 +30,8 @@ defmodule Redis.Runtime.Config do
      %__MODULE__{
        dir: Keyword.get(options, :dir),
        dbfilename: Keyword.get(options, :dbfilename),
-       port: Keyword.get(options, :port, @default_port)
+       port: Keyword.get(options, :port, @default_port),
+       replicaof: Keyword.get(options, :replicaof)
      }}
   end
 
@@ -44,6 +50,8 @@ defmodule Redis.Runtime.Config do
         :dbfilename -> state.dbfilename
         "port" -> state.port
         :port -> state.port
+        "replicaof" -> state.replicaof
+        :replicaof -> state.replicaof
       end
 
     {:reply, value, state}
