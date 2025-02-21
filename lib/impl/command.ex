@@ -87,8 +87,7 @@ defmodule Redis.Impl.Command do
         Protocol.encode_list(info)
 
       ["replication"] ->
-        replicaof = Config.get(:replicaof)
-        Protocol.encode("role:#{role(replicaof)}")
+        handle_replication_info()
 
       _ ->
         "-ERR unknown command\r\n"
@@ -99,15 +98,18 @@ defmodule Redis.Impl.Command do
     "-ERR unknown command\r\n"
   end
 
-  defp role(nil) do
-    "master"
-  end
+  defp handle_replication_info() do
+    replicaof = Config.get(:replicaof)
+    role = if replicaof, do: "slave", else: "master"
 
-  defp role(replicaof) do
-    if replicaof do
-      "slave"
-    else
-      "master"
-    end
+    info =
+      [
+        "role:#{role}",
+        "master_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb",
+        "master_repl_offset:0"
+      ]
+      |> Enum.join("\n")
+
+    Protocol.encode_bulk_string(info)
   end
 end

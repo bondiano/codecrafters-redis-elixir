@@ -47,6 +47,13 @@ defmodule Redis.Impl.Server do
   end
 
   def write_response(response, client) do
-    :ok = :gen_tcp.send(client, response)
+    case :gen_tcp.send(client, response) do
+      :ok ->
+        :ok
+
+      {:error, reason} ->
+        Logger.error("Error writing response: #{reason}")
+        :gen_tcp.close(client)
+    end
   end
 end
