@@ -16,7 +16,7 @@ defmodule Redis.Impl.Protocol do
   def null(), do: "$-1\r\n"
 
   def encode_list(array) do
-    "*#{Enum.count(array)}\r\n" <> Enum.join(Enum.map(array, &encode_bulk_string/1), "")
+    "*#{Enum.count(array)}\r\n" <> Enum.map_join(array, "", &encode_bulk_string/1)
   end
 
   def encode_bulk_string(nil), do: null()

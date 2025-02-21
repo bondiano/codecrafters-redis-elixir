@@ -4,13 +4,20 @@ defmodule Redis.Impl.Server do
   require Logger
   alias Redis.Impl.Command
   alias Redis.Runtime.Config
+  alias Redis.Impl.Protocol
 
   @doc """
   Listen for incoming connections
   """
   def listen() do
-    config = Config.get(:port)
-    {:ok, socket} = :gen_tcp.listen(config, [:binary, active: false, reuseaddr: true])
+    port = Config.get(:port)
+    replicaof = Config.get(:replicaof)
+
+    if replicaof do
+      setup_replica(replicaof)
+    end
+
+    {:ok, socket} = :gen_tcp.listen(port, [:binary, active: false, reuseaddr: true])
     loop_accept(socket)
   end
 
@@ -54,6 +61,26 @@ defmodule Redis.Impl.Server do
       {:error, reason} ->
         Logger.error("Error writing response: #{reason}")
         :gen_tcp.close(client)
+    end
+  end
+
+  defp setup_replica(replicaof) do
+    [host, port] = String.split(replicaof, " ")
+
+    case :gen_tcp.connect(String.to_charlist(host), String.to_integer(port), [
+           :binary,
+           active: false
+         ]) do
+      {:ok, socket} ->
+        :gen_tcp.send(socket, Protocol.encode_list(["PING"]))
+
+        {:ok, response} = :gen_tcp.recv(socket, 0)
+        :gen_tcp.close(socket)
+
+        Logger.info("Connected to master: #{replicaof}, response: #{response}")
+
+      {:error, reason} ->
+        Logger.error("Error connecting to master: #{reason}")
     end
   end
 end

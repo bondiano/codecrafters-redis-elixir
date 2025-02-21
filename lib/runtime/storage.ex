@@ -1,11 +1,10 @@
 defmodule Redis.Runtime.Storage do
   @moduledoc """
-  Storage GenServer.
+  Storage Agent.
   """
 
-  use GenServer
-
   require Logger
+  use Agent
 
   alias Redis.Impl.Storage
   alias Redis.Runtime.Config
@@ -15,66 +14,42 @@ defmodule Redis.Runtime.Storage do
   @type key :: String.t()
   @type value :: any()
   @type result :: {:ok, value()} | {:error, atom()}
+  @type simple_result :: :ok | {:error, atom()}
 
   @me __MODULE__
 
-  @spec start_link(init_state :: map()) :: GenServer.on_start()
-  def start_link(init_state) do
-    GenServer.start_link(@me, init_state, name: @me)
-  end
-
-  @impl true
-  def init(_) do
+  @spec start_link(init_state :: map()) :: Agent.on_start()
+  def start_link(_init_state) do
     dir = Config.get(:dir)
     filename = Config.get(:dbfilename)
 
-    init_data = load_init_data(dir, filename)
-
-    {:ok, init_data}
+    Agent.start_link(fn -> load_init_data(dir, filename) end, name: @me)
   end
 
   @spec get(key()) :: result()
   def get(key) do
-    GenServer.call(@me, {:get, key})
+    case Agent.get(@me, &Storage.get(&1, key)) do
+      nil -> {:error, :not_found}
+      value -> {:ok, value}
+    end
   end
 
-  @spec set(key(), value()) :: result()
+  @spec set(key(), value()) :: simple_result()
   def set(key, value) do
-    GenServer.call(@me, {:set, key, value})
+    Agent.update(@me, &Storage.set(&1, key, value))
   end
 
-  @spec set(key(), value(), integer()) :: result()
+  @spec set(key(), value(), integer()) :: simple_result()
   def set(key, value, expiry) do
-    GenServer.call(@me, {:set, key, value, expiry})
+    Agent.update(@me, &Storage.set(&1, key, value, expiry))
   end
 
   @spec keys(pattern :: String.t()) :: result()
   def keys(pattern) do
-    GenServer.call(@me, {:keys, pattern})
-  end
-
-  @impl true
-  def handle_call({:get, key}, _from, state) do
-    value = Storage.get(state, key)
-    {:reply, {:ok, value}, state}
-  end
-
-  @impl true
-  def handle_call({:set, key, value}, _from, state) do
-    new_state = Storage.set(state, key, value)
-    {:reply, :ok, new_state}
-  end
-
-  @impl true
-  def handle_call({:set, key, value, expiry}, _from, state) do
-    new_state = Storage.set(state, key, value, expiry)
-    {:reply, :ok, new_state}
-  end
-
-  @impl true
-  def handle_call({:keys, pattern}, _from, state) do
-    keys = Storage.keys(state, pattern)
-    {:reply, {:ok, keys}, state}
+    case Agent.get(@me, &Storage.keys(&1, pattern)) do
+      nil -> {:error, :not_found}
+      keys -> {:ok, keys}
+    end
   end
 
   defp load_init_data(nil, _), do: %{}

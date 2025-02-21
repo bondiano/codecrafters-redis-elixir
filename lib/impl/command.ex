@@ -76,8 +76,11 @@ defmodule Redis.Impl.Command do
 
   def exec(%__MODULE__{command: "KEYS", arguments: arguments}) do
     [pattern] = arguments
-    {:ok, keys} = Storage.keys(pattern)
-    Protocol.encode_list(keys)
+
+    case Storage.keys(pattern) do
+      {:ok, keys} -> Protocol.encode_list(keys)
+      {:error, _} -> Protocol.null()
+    end
   end
 
   def exec(%__MODULE__{command: "INFO", arguments: arguments}) do
