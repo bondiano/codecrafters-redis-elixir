@@ -70,7 +70,7 @@ defmodule Redis.Impl.Command do
         Protocol.encode(key_values)
 
       _ ->
-        "-ERR unknown command\r\n"
+        Protocol.error("unknown command")
     end
   end
 
@@ -93,12 +93,12 @@ defmodule Redis.Impl.Command do
         handle_replication_info()
 
       _ ->
-        "-ERR unknown command\r\n"
+        Protocol.error("unknown command")
     end
   end
 
   def exec(_request) do
-    "-ERR unknown command\r\n"
+    Protocol.error("unknown command")
   end
 
   defp handle_replication_info() do

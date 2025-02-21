@@ -74,10 +74,26 @@ defmodule Redis.Impl.Server do
       {:ok, socket} ->
         :gen_tcp.send(socket, Protocol.encode_list(["PING"]))
 
-        {:ok, response} = :gen_tcp.recv(socket, 0)
-        :gen_tcp.close(socket)
-
-        Logger.info("Connected to master: #{replicaof}, response: #{response}")
+        with {:ok, _} <- :gen_tcp.recv(socket, 0),
+             :ok <-
+               :gen_tcp.send(
+                 socket,
+                 Protocol.encode_list([
+                   "REPLCONF",
+                   "listening-port",
+                   Integer.to_string(Config.get(:port))
+                 ])
+               ),
+             {:ok, _} <- :gen_tcp.recv(socket, 0),
+             :ok <-
+               :gen_tcp.send(
+                 socket,
+                 Protocol.encode_list(["REPLCONF", "capa", "psync2"])
+               ),
+             {:ok, _} <- :gen_tcp.recv(socket, 0) do
+          :gen_tcp.close(socket)
+          Logger.info("Connected to master: #{replicaof}")
+        end
 
       {:error, reason} ->
         Logger.error("Error connecting to master: #{reason}")

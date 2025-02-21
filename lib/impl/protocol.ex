@@ -15,6 +15,10 @@ defmodule Redis.Impl.Protocol do
 
   def null(), do: "$-1\r\n"
 
+  def error(message) do
+    "-#{message}\r\n"
+  end
+
   def encode_list(array) do
     "*#{Enum.count(array)}\r\n" <> Enum.map_join(array, "", &encode_bulk_string/1)
   end
