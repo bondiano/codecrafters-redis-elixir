@@ -90,6 +90,12 @@ defmodule Redis.Impl.Server do
                  socket,
                  Protocol.encode_list(["REPLCONF", "capa", "psync2"])
                ),
+             {:ok, _} <- :gen_tcp.recv(socket, 0),
+             :ok <-
+               :gen_tcp.send(
+                 socket,
+                 Protocol.encode_list(["PSYNC", "?", "-1"])
+               ),
              {:ok, _} <- :gen_tcp.recv(socket, 0) do
           :gen_tcp.close(socket)
           Logger.info("Connected to master: #{replicaof}")
