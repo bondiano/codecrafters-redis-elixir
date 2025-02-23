@@ -26,7 +26,7 @@ defmodule Redis.Impl.Command do
 
   @spec exec(t()) :: String.t()
   def exec(%__MODULE__{command: "PING"}) do
-    "+PONG\r\n"
+    Protocol.encode("PONG")
   end
 
   def exec(%__MODULE__{command: "ECHO", arguments: arguments}) do
@@ -47,7 +47,7 @@ defmodule Redis.Impl.Command do
         Storage.set(key, values |> Enum.join(" "))
     end
 
-    "+OK\r\n"
+    Protocol.encode("OK")
   end
 
   def exec(%__MODULE__{command: "GET", arguments: arguments}) do
@@ -95,6 +95,10 @@ defmodule Redis.Impl.Command do
       _ ->
         Protocol.error("unknown command")
     end
+  end
+
+  def exec(%__MODULE__{command: "REPLCONF", arguments: _arguments}) do
+    Protocol.encode("OK")
   end
 
   def exec(_request) do
