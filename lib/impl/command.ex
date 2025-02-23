@@ -101,6 +101,10 @@ defmodule Redis.Impl.Command do
     Protocol.encode("OK")
   end
 
+  def exec(%__MODULE__{command: "PSYNC", arguments: ["?", "-1"]}) do
+    Protocol.encode("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+  end
+
   def exec(_request) do
     Protocol.error("unknown command")
   end
