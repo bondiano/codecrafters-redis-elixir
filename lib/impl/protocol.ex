@@ -39,6 +39,10 @@ defmodule Redis.Impl.Protocol do
     end
   end
 
+  def encode_binary_file(bin) do
+    "$#{byte_size(bin)}\r\n#{bin}"
+  end
+
   @spec decode(String.t()) :: {:ok, list(String.t())} | {:error, String.t()}
   def decode(string) do
     {:ok, command, []} =
@@ -74,5 +78,16 @@ defmodule Redis.Impl.Protocol do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  @spec empty_database!() :: binary()
+  def empty_database!() do
+    {:ok, empty_file} =
+      Base.decode64(
+        "UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog==",
+        ignore: :whitespace
+      )
+
+    empty_file
   end
 end

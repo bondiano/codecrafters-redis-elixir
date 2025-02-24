@@ -24,7 +24,7 @@ defmodule Redis.Impl.Command do
     %__MODULE__{command: command |> String.upcase(), arguments: arguments}
   end
 
-  @spec exec(t()) :: String.t()
+  @spec exec(t()) :: String.t() | list(String.t())
   def exec(%__MODULE__{command: "PING"}) do
     Protocol.encode("PONG")
   end
@@ -102,7 +102,10 @@ defmodule Redis.Impl.Command do
   end
 
   def exec(%__MODULE__{command: "PSYNC", arguments: ["?", "-1"]}) do
-    Protocol.encode("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0")
+    [
+      Protocol.encode("FULLRESYNC 8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb 0"),
+      Protocol.encode_binary_file(Protocol.empty_database!())
+    ]
   end
 
   def exec(_request) do
